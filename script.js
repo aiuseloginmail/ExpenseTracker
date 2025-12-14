@@ -84,9 +84,9 @@ onAuthStateChanged(auth, (user) => {
     setupFirestoreListener(currentUserId);
   } else {
     // User is signed out, so sign them in anonymously
-    signInAnonymously(auth)
-      .catch((error) => {
-        console.error("Anonymous sign-in failed:", error.message);
+    //signInAnonymously(auth)
+     // .catch((error) => {
+      //  console.error("Anonymous sign-in failed:", error.message);
         // You might want to show an error message to the user here
       });
   }
@@ -293,5 +293,6 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
 
 
