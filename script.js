@@ -175,7 +175,8 @@ onAuthStateChanged(auth, (user) => {
     console.log("Firebase user signed in:", user.uid);
 
     currentUserId = user.uid;
-
+    resetInactivityTimer();
+    
     // Hide login, show app
     document.getElementById("authSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
@@ -395,5 +396,6 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
 
 
