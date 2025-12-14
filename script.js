@@ -76,15 +76,19 @@ signupBtn.onclick = async () => {
 };
 
 // ================= GOOGLE LOGIN =================
-const googleLoginBtn = document.getElementById("googleLoginBtn");
 const googleProvider = new GoogleAuthProvider();
+
+// 🔥 Force Gmail account selection every time
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
 
 googleLoginBtn.onclick = async () => {
   try {
     await signInWithPopup(auth, googleProvider);
-  } catch (error) {
-    console.error("Google sign-in failed:", error);
-    alert(error.message);
+  } catch (e) {
+    console.error("Google sign-in error:", e.code, e.message);
+    alert(e.message || "Google sign-in failed");
   }
 };
 
@@ -396,6 +400,7 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
 
 
 
