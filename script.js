@@ -40,54 +40,66 @@ const firebaseConfig = {
 
 // Init Firebase
 const app = initializeApp(firebaseConfig);
-getAnalytics(app);
+try { getAnalytics(app); } catch (e) {}
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 // =================================================================
-// 2. AUTH UI (EMAIL + GOOGLE)
+// GLOBAL STATE
 // =================================================================
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const loginBtn = document.getElementById("loginBtn");
-const signupBtn = document.getElementById("signupBtn");
-const googleLoginBtn = document.getElementById("googleLoginBtn");
+let currentUserId = null;
+let transactions = [];
+let unsubscribeSnapshot = null;
 
-// Email login
-loginBtn.onclick = async () => {
-  try {
-    await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-  } catch (e) {
-    alert(e.message);
-  }
-};
+// =================================================================
+// 2. DOM READY
+// =================================================================
+document.addEventListener("DOMContentLoaded", () => {
 
-// Signup
-signupBtn.onclick = async () => {
-  try {
-    await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-  } catch (e) {
-    alert(e.message);
-  }
-};
+  // ================= AUTH UI =================
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  const loginBtn = document.getElementById("loginBtn");
+  const signupBtn = document.getElementById("signupBtn");
+  const googleLoginBtn = document.getElementById("googleLoginBtn");
 
-// Google login
-const googleProvider = new GoogleAuthProvider();
-googleLoginBtn.onclick = async () => {
-  try {
-    await signInWithPopup(auth, googleProvider);
-  } catch (e) {
-    alert(e.message);
-  }
-};
+  loginBtn.onclick = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  signupBtn.onclick = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const googleProvider = new GoogleAuthProvider();
+  googleLoginBtn.onclick = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  renderSuggestions();
+});
 
 // =================================================================
 // 3. AUTH STATE HANDLER
 // =================================================================
-let currentUserId = null;
-let transactions = [];
-
 onAuthStateChanged(auth, (user) => {
+  if (unsubscribeSnapshot) {
+    unsubscribeSnapshot();
+    unsubscribeSnapshot = null;
+  }
+
   if (user) {
     currentUserId = user.uid;
     document.getElementById("authSection").classList.add("hidden");
@@ -104,17 +116,16 @@ onAuthStateChanged(auth, (user) => {
 // 4. FIRESTORE LISTENER
 // =================================================================
 function startFirestoreListener() {
+  if (!currentUserId) return;
+
   const q = query(
     collection(db, "expenses"),
     where("userId", "==", currentUserId),
     orderBy("date", "desc")
   );
 
-  onSnapshot(q, (snapshot) => {
-    transactions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+  unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+    transactions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderSummary();
     renderList();
   });
@@ -160,7 +171,7 @@ function renderSummary() {
 }
 
 // =================================================================
-// 8. RENDER TRANSACTIONS
+// 8. RENDER LIST
 // =================================================================
 function renderList() {
   list.innerHTML = "";
@@ -199,99 +210,4 @@ function renderList() {
 // =================================================================
 // 9. SUGGESTIONS
 // =================================================================
-const DEFAULT_DESCRIPTIONS = ["Salary", "Food", "Auto", "Bus", "Train", "School Fee", "Medicine"];
-function renderSuggestions() {
-  suggestionsContainer.innerHTML = "";
-  DEFAULT_DESCRIPTIONS.forEach(text => {
-    const chip = document.createElement("button");
-    chip.className = "px-3 py-1 rounded-full bg-slate-200 text-sm";
-    chip.textContent = text;
-    chip.onclick = () => descInput.value = text;
-    suggestionsContainer.appendChild(chip);
-  });
-}
-renderSuggestions();
-
-// =================================================================
-// 10. CRUD
-// =================================================================
-function editTransaction(t) {
-  editingId = t.id;
-  amount = t.amount.toString();
-  amountDisplay.textContent = amount;
-  descInput.value = t.description;
-  isIncome = t.type === "income";
-  toggleBg.className = `toggle-bg ${isIncome ? "income" : "expense"}`;
-  openModal();
-}
-
-async function deleteTransaction(id) {
-  if (!confirm("Delete this transaction?")) return;
-  await deleteDoc(doc(db, "expenses", id));
-}
-
-document.getElementById("saveTransaction").onclick = async () => {
-  if (!amount || !descInput.value) return;
-
-  const data = {
-    userId: currentUserId,
-    amount: parseFloat(amount),
-    description: descInput.value.trim(),
-    type: isIncome ? "income" : "expense",
-    date: new Date()
-  };
-
-  if (editingId) {
-    await updateDoc(doc(db, "expenses", editingId), data);
-  } else {
-    await addDoc(collection(db, "expenses"), data);
-  }
-
-  closeModal();
-};
-
-// =================================================================
-// 11. MODAL & CONTROLS
-// =================================================================
-function openModal() {
-  document.getElementById("transactionModal").classList.remove("hidden");
-}
-function closeModal() {
-  document.getElementById("transactionModal").classList.add("hidden");
-  amount = "";
-  amountDisplay.textContent = "0";
-  descInput.value = "";
-  editingId = null;
-}
-
-document.getElementById("fab").onclick = openModal;
-document.getElementById("closeModal").onclick = closeModal;
-
-// Numpad
-document.querySelectorAll(".num").forEach(b =>
-  b.onclick = () => {
-    amount += b.textContent;
-    amountDisplay.textContent = amount;
-  }
-);
-document.getElementById("backspace").onclick = () => {
-  amount = amount.slice(0, -1);
-  amountDisplay.textContent = amount || "0";
-};
-
-// Toggle
-document.getElementById("incomeBtn").onclick = () => {
-  isIncome = true;
-  toggleBg.className = "toggle-bg income";
-};
-document.getElementById("expenseBtn").onclick = () => {
-  isIncome = false;
-  toggleBg.className = "toggle-bg expense";
-};
-
-// =================================================================
-// 12. SERVICE WORKER (PWA)
-// =================================================================
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
-}
+const DEFAULT_DESCRIPTIONS = ["Salary", "Food", "Auto", "Bus", "Train", "School Fee", "Medicine]()_
