@@ -118,22 +118,30 @@ if ("serviceWorker" in navigator) {
 }
 
 // Handle authentication state change (sign in anonymously)
+// ================= AUTH STATE HANDLER =================
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    // User is signed in
+    console.log("Firebase user signed in:", user.uid);
+
     currentUserId = user.uid;
-    console.log("Firebase user signed in:", currentUserId);
-    // Start listening for their transactions
+
+    // Hide login, show app
+    document.getElementById("authSection").classList.add("hidden");
+    document.getElementById("appSection").classList.remove("hidden");
+
+    // Start Firestore listener
     setupFirestoreListener(currentUserId);
   } else {
-    // User is signed out, so sign them in anonymously
-    //signInAnonymously(auth)
-     // .catch((error) => {
-      //  console.error("Anonymous sign-in failed:", error.message);
-        // You might want to show an error message to the user here
-      });
+    console.log("User signed out");
+
+    currentUserId = null;
+
+    // Show login, hide app
+    document.getElementById("authSection").classList.remove("hidden");
+    document.getElementById("appSection").classList.add("hidden");
   }
 });
+
 
 
 // =================================================================
@@ -336,3 +344,4 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
