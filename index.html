@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Expense Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-manrope">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-4 py-4 bg-white shadow-sm">
+    <h1 class="text-xl font-extrabold">Expense Tracker</h1>
+  </header>
+
+  <!-- Summary -->
+  <section class="p-4 space-y-4">
+    <div class="summary-card bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+      <p class="text-sm opacity-80">Total Balance</p>
+      <h2 id="totalBalance" class="text-3xl font-bold">₹0.00</h2>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="mini-card bg-emerald-500 text-white">
+        <p class="text-xs opacity-80">Income</p>
+        <h3 id="totalIncome" class="text-xl font-semibold">₹0.00</h3>
+      </div>
+      <div class="mini-card bg-rose-500 text-white">
+        <p class="text-xs opacity-80">Expense</p>
+        <h3 id="totalExpense" class="text-xl font-semibold">₹0.00</h3>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transactions -->
+  <section class="px-4">
+    <h2 class="font-semibold mb-2">Recent Transactions</h2>
+
+    <div id="transactionList" class="space-y-2 pb-28"></div>
+    <p id="emptyState" class="text-center text-slate-400 mt-10 hidden">
+      No transactions yet
+    </p>
+  </section>
+
+  <!-- Floating Action Button -->
+  <button id="fab" class="fab">+</button>
+
+  <!-- Transaction Modal -->
+  <div id="transactionModal" class="modal hidden">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="modalTitle">Transaction</h2>
+        <button id="closeModal">✕</button>
+      </header>
+
+      <div class="amount-display">
+        ₹<span id="amountDisplay">0</span>
+      </div>
+
+      <input
+        id="descriptionInput"
+        type="text"
+        placeholder="Expense description"
+        class="input"
+      />
+
+      <div id="suggestions" class="flex flex-wrap gap-2 mt-2"></div>
+
+      <div class="toggle-container">
+        <div id="toggleBg" class="toggle-bg income"></div>
+        <button id="incomeBtn">Income</button>
+        <button id="expenseBtn">Expense</button>
+      </div>
+
+      <div class="numpad">
+        <button class="num">1</button><button class="num">2</button><button class="num">3</button>
+        <button class="num">4</button><button class="num">5</button><button class="num">6</button>
+        <button class="num">7</button><button class="num">8</button><button class="num">9</button>
+        <button class="num">.</button><button class="num">0</button><button id="backspace">⌫</button>
+      </div>
+
+      <button id="saveTransaction" class="save-btn">Save Transaction</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
