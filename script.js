@@ -31,6 +31,52 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// ================= AUTH UI ELEMENTS =================
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
+
+// Email login
+loginBtn.onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      emailInput.value,
+      passwordInput.value
+    );
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+// Signup
+signupBtn.onclick = async () => {
+  try {
+    await createUserWithEmailAndPassword(
+      auth,
+      emailInput.value,
+      passwordInput.value
+    );
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+// ================= GOOGLE LOGIN =================
+const googleLoginBtn = document.getElementById("googleLoginBtn");
+const googleProvider = new GoogleAuthProvider();
+
+googleLoginBtn.onclick = async () => {
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    console.error("Google sign-in failed:", error);
+    alert(error.message);
+  }
+};
+
+
 // Global variables
 let transactions = []; // Data will now be populated from Firestore
 let currentUserId = null;
@@ -290,7 +336,3 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
-
-
-
-
