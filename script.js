@@ -88,6 +88,45 @@ googleLoginBtn.onclick = async () => {
   }
 };
 
+function setupLogout() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (!logoutBtn) return;
+
+  logoutBtn.onclick = async () => {
+    try {
+      await signOut(auth);
+      console.log("User signed out");
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
+  };
+}
+
+// ===== AUTO LOGOUT AFTER INACTIVITY =====
+let inactivityTimer;
+const AUTO_LOGOUT_TIME = 10 * 60 * 1000; // 10 minutes
+
+function resetInactivityTimer() {
+  if (!currentUserId) return;
+
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    signOut(auth);
+    alert("You were logged out due to inactivity.");
+  }, AUTO_LOGOUT_TIME);
+}
+
+function setupAutoLogout() {
+  ["click", "mousemove", "keydown", "touchstart"].forEach(event => {
+    document.addEventListener(event, resetInactivityTimer);
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupLogout();
+  setupAutoLogout();
+});
 
 // Global variables
 let transactions = []; // Data will now be populated from Firestore
@@ -356,4 +395,5 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
 
