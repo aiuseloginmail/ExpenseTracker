@@ -70,6 +70,10 @@ function setupFirestoreListener(userId) {
   });
 }
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js");
+}
+
 // Handle authentication state change (sign in anonymously)
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -289,4 +293,5 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
 
