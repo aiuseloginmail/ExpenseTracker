@@ -1,9 +1,9 @@
 // =================================================================
 // 1. FIREBASE SETUP & INITIALIZATION
 // =================================================================
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { 
   getFirestore, 
   collection, 
@@ -15,7 +15,7 @@ import {
   deleteDoc, 
   doc, 
   updateDoc 
-} from "firebase/firestore";
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -289,3 +289,4 @@ renderSuggestions();
 // NOTE: Since the rendering is now handled by the onAuthStateChanged listener, 
 // we don't call renderSummary() and renderList() here directly.
 // =================================================================
+
