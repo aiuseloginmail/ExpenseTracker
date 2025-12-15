@@ -83,14 +83,30 @@ signupBtn.onclick = async () => {
   }
 };
 
+// =================================================================
+// GOOGLE LOGIN (POPUP SAFE)
+// =================================================================
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
+let googlePopupInProgress = false;
+
 googleLoginBtn.onclick = async () => {
+  if (googlePopupInProgress) return;
+
+  googlePopupInProgress = true;
+  googleLoginBtn.disabled = true;
+
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (e) {
-    console.error(e);
+    if (e.code !== "auth/cancelled-popup-request") {
+      console.error("Google sign-in error:", e);
+      alert(e.message || "Google sign-in failed");
+    }
+  } finally {
+    googlePopupInProgress = false;
+    googleLoginBtn.disabled = false;
   }
 };
 
@@ -108,7 +124,10 @@ const AUTO_LOGOUT_TIME = 10 * 60 * 1000;
 function resetInactivityTimer() {
   if (!currentUserId) return;
   clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(() => signOut(auth), AUTO_LOGOUT_TIME);
+  inactivityTimer = setTimeout(() => {
+    signOut(auth);
+    alert("Logged out due to inactivity");
+  }, AUTO_LOGOUT_TIME);
 }
 
 ["click", "mousemove", "keydown", "touchstart"].forEach(evt =>
@@ -116,16 +135,22 @@ function resetInactivityTimer() {
 );
 
 // =================================================================
-// AUTH STATE
+// AUTH STATE HANDLER
 // =================================================================
 onAuthStateChanged(auth, user => {
-  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  if (unsubscribeSnapshot) {
+    unsubscribeSnapshot();
+    unsubscribeSnapshot = null;
+  }
 
   if (user) {
     currentUserId = user.uid;
+    setupLogout();
+    resetInactivityTimer();
+
     document.getElementById("authSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
-    setupLogout();
+
     startFirestoreListener();
   } else {
     currentUserId = null;
@@ -135,9 +160,11 @@ onAuthStateChanged(auth, user => {
 });
 
 // =================================================================
-// FIRESTORE LISTENER WITH FILTER
+// FIRESTORE LISTENER WITH DATE FILTER
 // =================================================================
 function startFirestoreListener() {
+  if (!currentUserId) return;
+
   let constraints = [
     where("userId", "==", currentUserId),
     orderBy("date", "desc")
@@ -156,6 +183,36 @@ function startFirestoreListener() {
 }
 
 // =================================================================
+// FILTER MODAL
+// =================================================================
+const filterModal = document.getElementById("filterModal");
+const filterBtn = document.getElementById("filterBtn");
+
+filterBtn?.addEventListener("click", () =>
+  filterModal.classList.remove("hidden")
+);
+
+document.getElementById("applyFilter")?.addEventListener("click", () => {
+  const fromVal = document.getElementById("fromDate").value;
+  const toVal = document.getElementById("toDate").value;
+
+  filterFromDate = fromVal ? new Date(fromVal) : null;
+  filterToDate = toVal ? new Date(toVal + "T23:59:59") : null;
+
+  filterModal.classList.add("hidden");
+  startFirestoreListener();
+});
+
+document.getElementById("clearFilter")?.addEventListener("click", () => {
+  filterFromDate = null;
+  filterToDate = null;
+  document.getElementById("fromDate").value = "";
+  document.getElementById("toDate").value = "";
+  filterModal.classList.add("hidden");
+  startFirestoreListener();
+});
+
+// =================================================================
 // UI ELEMENTS
 // =================================================================
 const list = document.getElementById("transactionList");
@@ -168,11 +225,14 @@ const toggleBg = document.getElementById("toggleBg");
 // UTILITIES
 // =================================================================
 function formatCurrency(v) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(v);
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR"
+  }).format(v);
 }
 
 // =================================================================
-// EDIT & DELETE (FIXED)
+// EDIT & DELETE
 // =================================================================
 function editTransaction(t) {
   editingId = t.id;
@@ -194,10 +254,13 @@ async function deleteTransaction(id) {
 // =================================================================
 function renderSummary() {
   let income = 0, expense = 0;
-  transactions.forEach(t => t.type === "income" ? income += t.amount : expense += t.amount);
+  transactions.forEach(t =>
+    t.type === "income" ? income += t.amount : expense += t.amount
+  );
   document.getElementById("totalIncome").textContent = formatCurrency(income);
   document.getElementById("totalExpense").textContent = formatCurrency(expense);
-  document.getElementById("totalBalance").textContent = formatCurrency(income - expense);
+  document.getElementById("totalBalance").textContent =
+    formatCurrency(income - expense);
 }
 
 function renderList() {
@@ -229,12 +292,13 @@ function renderList() {
 
     row.querySelector(".edit-btn").onclick = () => editTransaction(t);
     row.querySelector(".delete-btn").onclick = () => deleteTransaction(t.id);
+
     list.appendChild(row);
   });
 }
 
 // =================================================================
-// MODAL & SAVE
+// MODAL + SAVE
 // =================================================================
 function openModal() {
   document.getElementById("transactionModal").classList.remove("hidden");
