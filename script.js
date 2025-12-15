@@ -1,6 +1,6 @@
-// ================================================================
-// FIREBASE SETUP
-// ================================================================
+// ======================================================
+// FIREBASE IMPORTS
+// ======================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
@@ -23,9 +23,9 @@ import {
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ================================================================
-// CONFIG
-// ================================================================
+// ======================================================
+// FIREBASE CONFIG
+// ======================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAQhPbt_oQj3_zNntl6U6VPnzpCnSygDDg",
   authDomain: "expense-tracker-28379.firebaseapp.com",
@@ -36,85 +36,82 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ================================================================
-// DOM ELEMENTS (DECLARE FIRST)
-// ================================================================
+// ======================================================
+// DOM ELEMENTS
+// ======================================================
 const authSection = document.getElementById("authSection");
 const appSection = document.getElementById("appSection");
 
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
 const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn");
 const googleLoginBtn = document.getElementById("googleLoginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
-const filterBtn = document.getElementById("filterBtn");
-const filterModal = document.getElementById("filterModal");
-const applyFilterBtn = document.getElementById("applyFilter");
-const clearFilterBtn = document.getElementById("clearFilter");
-
-const list = document.getElementById("transactionList");
-const emptyState = document.getElementById("emptyState");
-const totalIncomeEl = document.getElementById("totalIncome");
-const totalExpenseEl = document.getElementById("totalExpense");
-const totalBalanceEl = document.getElementById("totalBalance");
-
 const fab = document.getElementById("fab");
 const modal = document.getElementById("transactionModal");
-const closeModalBtn = document.getElementById("closeModal");
+const closeModal = document.getElementById("closeModal");
+const saveBtn = document.getElementById("saveTransaction");
+
 const amountDisplay = document.getElementById("amountDisplay");
 const descInput = document.getElementById("descriptionInput");
-const backspaceBtn = document.getElementById("backspace");
+const numButtons = document.querySelectorAll(".num");
+const backspace = document.getElementById("backspace");
+
 const incomeBtn = document.getElementById("incomeBtn");
 const expenseBtn = document.getElementById("expenseBtn");
 const toggleBg = document.getElementById("toggleBg");
-const saveBtn = document.getElementById("saveTransaction");
 
-// ================================================================
+const filterBtn = document.getElementById("filterBtn");
+const filterModal = document.getElementById("filterModal");
+const applyFilter = document.getElementById("applyFilter");
+const clearFilter = document.getElementById("clearFilter");
+
+const list = document.getElementById("transactionList");
+const emptyState = document.getElementById("emptyState");
+const totalIncome = document.getElementById("totalIncome");
+const totalExpense = document.getElementById("totalExpense");
+const totalBalance = document.getElementById("totalBalance");
+
+// ======================================================
 // STATE
-// ================================================================
+// ======================================================
 let currentUserId = null;
-let unsubscribeSnapshot = null;
+let unsubscribe = null;
 let transactions = [];
+
 let amount = "";
 let isIncome = true;
-let filterFromDate = null;
-let filterToDate = null;
+let filterFrom = null;
+let filterTo = null;
 
-// ================================================================
-// AUTH HANDLERS (SAFE)
-// ================================================================
-if (loginBtn) {
-  loginBtn.onclick = () =>
-    signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
-      .catch(e => alert(e.message));
-}
+// ======================================================
+// AUTH
+// ======================================================
+loginBtn.onclick = () =>
+  signInWithEmailAndPassword(
+    auth,
+    emailInput.value,
+    passwordInput.value
+  ).catch(e => alert(e.message));
 
-if (signupBtn) {
-  signupBtn.onclick = () =>
-    createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
-      .catch(e => alert(e.message));
-}
+signupBtn.onclick = () =>
+  createUserWithEmailAndPassword(
+    auth,
+    emailInput.value,
+    passwordInput.value
+  ).catch(e => alert(e.message));
 
-if (googleLoginBtn) {
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
+googleLoginBtn.onclick = () =>
+  signInWithPopup(auth, new GoogleAuthProvider())
+    .catch(e => alert(e.message));
 
-  googleLoginBtn.onclick = () =>
-    signInWithPopup(auth, provider)
-      .catch(e => alert(e.message));
-}
+logoutBtn.onclick = () => signOut(auth);
 
-if (logoutBtn) {
-  logoutBtn.onclick = () => signOut(auth);
-}
-
-// ================================================================
+// ======================================================
 // AUTH STATE
-// ================================================================
+// ======================================================
 onAuthStateChanged(auth, user => {
-  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  if (unsubscribe) unsubscribe();
 
   if (user) {
     currentUserId = user.uid;
@@ -127,101 +124,71 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// ================================================================
-// FIRESTORE
-// ================================================================
+// ======================================================
+// FIRESTORE LISTENER
+// ======================================================
 function startListener() {
-  if (!currentUserId) return;
-  if (unsubscribeSnapshot) unsubscribeSnapshot();
-
-  const q = query(
-    collection(db, "expenses"),
+  let constraints = [
     where("userId", "==", currentUserId),
     orderBy("date", "desc")
+  ];
+
+  if (filterFrom) constraints.push(where("date", ">=", filterFrom));
+  if (filterTo) constraints.push(where("date", "<=", filterTo));
+
+  unsubscribe = onSnapshot(
+    query(collection(db, "expenses"), ...constraints),
+    snap => {
+      transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      render();
+    }
   );
-
-  unsubscribeSnapshot = onSnapshot(q, snap => {
-    transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    render();
-  });
 }
 
-// ================================================================
-// FILTERS (SAFE)
-// ================================================================
-if (filterBtn && filterModal) {
-  filterBtn.onclick = () => filterModal.classList.remove("hidden");
-}
-
-if (applyFilterBtn) {
-  applyFilterBtn.onclick = () => {
-    const from = document.getElementById("fromDate").value;
-    const to = document.getElementById("toDate").value;
-
-    filterFromDate = from ? Timestamp.fromDate(new Date(from)) : null;
-    filterToDate = to ? Timestamp.fromDate(new Date(to + "T23:59:59")) : null;
-
-    filterModal.classList.add("hidden");
-    startListener();
-  };
-}
-
-if (clearFilterBtn) {
-  clearFilterBtn.onclick = () => {
-    filterFromDate = null;
-    filterToDate = null;
-    filterModal.classList.add("hidden");
-    startListener();
-  };
-}
-
-// ================================================================
-// RENDER (SAFE)
-// ================================================================
+// ======================================================
+// RENDER
+// ======================================================
 function render() {
-  if (!list) return;
-
   list.innerHTML = "";
   let income = 0, expense = 0;
 
-  if (transactions.length === 0) {
+  if (!transactions.length) {
     emptyState.classList.remove("hidden");
     return;
   }
-
   emptyState.classList.add("hidden");
 
   transactions.forEach(t => {
     t.type === "income" ? income += t.amount : expense += t.amount;
 
-    const row = document.createElement("div");
-    row.className = "bg-white p-3 rounded-xl shadow flex justify-between";
+    const div = document.createElement("div");
+    div.className = "bg-white p-3 rounded-xl shadow flex justify-between";
 
-    row.innerHTML = `
+    div.innerHTML = `
       <div>
         <p class="font-semibold">${t.description}</p>
         <p class="text-xs text-slate-400">${t.date.toDate().toLocaleString()}</p>
       </div>
-      <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"} font-semibold">
+      <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"}">
         ${t.type === "income" ? "+" : "-"}₹${t.amount}
       </p>
     `;
 
-    list.appendChild(row);
+    list.appendChild(div);
   });
 
-  totalIncomeEl.textContent = `₹${income}`;
-  totalExpenseEl.textContent = `₹${expense}`;
-  totalBalanceEl.textContent = `₹${income - expense}`;
+  totalIncome.textContent = `₹${income}`;
+  totalExpense.textContent = `₹${expense}`;
+  totalBalance.textContent = `₹${income - expense}`;
 }
 
-// ================================================================
-// MODAL + SAVE
-// ================================================================
-if (fab && modal) fab.onclick = () => modal.classList.remove("hidden");
-if (closeModalBtn && modal) closeModalBtn.onclick = () => modal.classList.add("hidden");
+// ======================================================
+// MODAL + NUMPAD (FIXED)
+// ======================================================
+fab.onclick = () => modal.classList.remove("hidden");
+closeModal.onclick = resetModal;
 
-document.querySelectorAll(".num").forEach(btn => {
+numButtons.forEach(btn => {
   btn.onclick = () => {
     if (btn.textContent === "." && amount.includes(".")) return;
     amount += btn.textContent;
@@ -229,39 +196,69 @@ document.querySelectorAll(".num").forEach(btn => {
   };
 });
 
-if (backspaceBtn) {
-  backspaceBtn.onclick = () => {
-    amount = amount.slice(0, -1);
-    amountDisplay.textContent = amount || "0";
-  };
-}
+backspace.onclick = () => {
+  amount = amount.slice(0, -1);
+  amountDisplay.textContent = amount || "0";
+};
 
-if (incomeBtn) incomeBtn.onclick = () => {
+incomeBtn.onclick = () => {
   isIncome = true;
   toggleBg.className = "toggle-bg income";
 };
 
-if (expenseBtn) expenseBtn.onclick = () => {
+expenseBtn.onclick = () => {
   isIncome = false;
   toggleBg.className = "toggle-bg expense";
 };
 
-if (saveBtn) {
-  saveBtn.onclick = async () => {
-    const value = parseFloat(amount);
-    if (isNaN(value) || !descInput.value.trim()) return;
+// ======================================================
+// SAVE TRANSACTION (WORKING)
+// ======================================================
+saveBtn.onclick = async () => {
+  const value = parseFloat(amount);
+  if (isNaN(value) || !descInput.value.trim()) return;
 
-    await addDoc(collection(db, "expenses"), {
-      userId: currentUserId,
-      amount: value,
-      description: descInput.value.trim(),
-      type: isIncome ? "income" : "expense",
-      date: Timestamp.now()
-    });
+  await addDoc(collection(db, "expenses"), {
+    userId: currentUserId,
+    amount: value,
+    description: descInput.value.trim(),
+    type: isIncome ? "income" : "expense",
+    date: Timestamp.now()
+  });
 
-    modal.classList.add("hidden");
-    amount = "";
-    amountDisplay.textContent = "0";
-    descInput.value = "";
-  };
+  resetModal();
+};
+
+function resetModal() {
+  modal.classList.add("hidden");
+  amount = "";
+  amountDisplay.textContent = "0";
+  descInput.value = "";
+  isIncome = true;
+  toggleBg.className = "toggle-bg income";
 }
+
+// ======================================================
+// FILTER (WORKING)
+// ======================================================
+filterBtn.onclick = () => filterModal.classList.remove("hidden");
+
+applyFilter.onclick = () => {
+  filterFrom = fromDate.value
+    ? Timestamp.fromDate(new Date(fromDate.value))
+    : null;
+
+  filterTo = toDate.value
+    ? Timestamp.fromDate(new Date(toDate.value + "T23:59:59"))
+    : null;
+
+  filterModal.classList.add("hidden");
+  startListener();
+};
+
+clearFilter.onclick = () => {
+  filterFrom = null;
+  filterTo = null;
+  filterModal.classList.add("hidden");
+  startListener();
+};
