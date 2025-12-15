@@ -101,7 +101,7 @@ googleLoginBtn.onclick = async () => {
     await signInWithPopup(auth, googleProvider);
   } catch (e) {
     if (e.code !== "auth/cancelled-popup-request") {
-      console.error("Google sign-in error:", e);
+      console.error(e);
       alert(e.message || "Google sign-in failed");
     }
   } finally {
@@ -138,10 +138,7 @@ function resetInactivityTimer() {
 // AUTH STATE HANDLER
 // =================================================================
 onAuthStateChanged(auth, user => {
-  if (unsubscribeSnapshot) {
-    unsubscribeSnapshot();
-    unsubscribeSnapshot = null;
-  }
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
 
   if (user) {
     currentUserId = user.uid;
@@ -160,11 +157,9 @@ onAuthStateChanged(auth, user => {
 });
 
 // =================================================================
-// FIRESTORE LISTENER WITH DATE FILTER
+// FIRESTORE LISTENER WITH FILTER
 // =================================================================
 function startFirestoreListener() {
-  if (!currentUserId) return;
-
   let constraints = [
     where("userId", "==", currentUserId),
     orderBy("date", "desc")
@@ -298,7 +293,7 @@ function renderList() {
 }
 
 // =================================================================
-// MODAL + SAVE
+// MODAL + NUMPAD + TOGGLE (FIXED)
 // =================================================================
 function openModal() {
   document.getElementById("transactionModal").classList.remove("hidden");
@@ -307,16 +302,50 @@ function openModal() {
 function closeModal() {
   document.getElementById("transactionModal").classList.add("hidden");
   amount = "";
+  amountDisplay.textContent = "0";
+  descInput.value = "";
   editingId = null;
+  isIncome = true;
+  toggleBg.className = "toggle-bg income";
 }
 
+document.getElementById("fab").onclick = openModal;
+document.getElementById("closeModal").onclick = closeModal;
+
+// Numpad
+document.querySelectorAll(".num").forEach(btn => {
+  btn.onclick = () => {
+    amount += btn.textContent;
+    amountDisplay.textContent = amount;
+  };
+});
+
+document.getElementById("backspace")?.addEventListener("click", () => {
+  amount = amount.slice(0, -1);
+  amountDisplay.textContent = amount || "0";
+});
+
+// Toggle
+document.getElementById("incomeBtn")?.addEventListener("click", () => {
+  isIncome = true;
+  toggleBg.className = "toggle-bg income";
+});
+
+document.getElementById("expenseBtn")?.addEventListener("click", () => {
+  isIncome = false;
+  toggleBg.className = "toggle-bg expense";
+});
+
+// =================================================================
+// SAVE TRANSACTION
+// =================================================================
 document.getElementById("saveTransaction").onclick = async () => {
   if (!amount || !descInput.value) return;
 
   const data = {
     userId: currentUserId,
     amount: parseFloat(amount),
-    description: descInput.value,
+    description: descInput.value.trim(),
     type: isIncome ? "income" : "expense",
     date: new Date()
   };
