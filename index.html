@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#3b82f6">
 
@@ -11,25 +12,172 @@
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+  >
 
-  <!-- Tailwind -->
+  <!-- Tailwind (OK for now) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:,">
 </head>
 
 <body class="bg-slate-100 text-slate-800 font-manrope">
 
 <!-- ================= AUTH SECTION ================= -->
-<div id="authSection" class="min-h-screen flex items-center justify-center">
+<div
+  id="authSection"
+  class="min-h-screen flex items-center justify-center bg-slate-100"
+>
   <div class="bg-white p-6 rounded-xl shadow w-full max-w-sm">
-    <h2 class="text-2xl font-bold mb-4 text-center">Expense Tracker Login</h2>
 
-    <input id="emailInput" type="email" placeholder="Email" class="input mb-3" />
-    <input id="passwordInput" type="password" placeholder="Password" class="input mb-4" />
+    <h2 class="text-2xl font-bold mb-4 text-center">
+      Expense Tracker Login
+    </h2>
 
-    <button id="loginBtn" class="save-btn mb-2">Login</button>
+    <!-- Email -->
+    <input
+      id="emailInput"
+      type="email"
+      placeholder="Email"
+      class="input mb-3"
+    />
 
+    <!-- Password -->
+    <input
+      id="passwordInput"
+      type="password"
+      placeholder="Password"
+      class="input mb-4"
+    />
+
+    <!-- Login -->
+    <button id="loginBtn" class="save-btn mb-3">
+      Login
+    </button>
+
+    <!-- Google Login (IMPORTANT) -->
     <button
-      id="googl
+      id="googleLoginBtn"
+      type="button"
+      class="w-full flex items-center justify-center gap-2
+             border border-slate-300 rounded-lg py-2
+             hover:bg-slate-100 transition mb-3"
+    >
+      <img
+        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+        alt="Google"
+        class="w-5 h-5"
+      />
+      <span class="font-medium">Sign in with Google</span>
+    </button>
+
+    <!-- Signup -->
+    <button id="signupBtn" class="secondary-btn w-full">
+      Create Account
+    </button>
+
+  </div>
+</div>
+
+<!-- ================= APP SECTION ================= -->
+<div id="appSection" class="hidden">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-4 py-4 bg-white shadow-sm">
+    <h1 class="text-xl font-extrabold">Expense Tracker</h1>
+    <div class="flex gap-4">
+      <button id="filterBtn" class="text-sm">📅 Filter</button>
+      <button id="logoutBtn" class="text-sm text-red-500">Logout</button>
+    </div>
+  </header>
+
+  <!-- Summary -->
+  <section class="p-4 space-y-4">
+    <div class="summary-card bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+      <p class="text-sm opacity-80">Total Balance</p>
+      <h2 id="totalBalance" class="text-3xl font-bold">₹0.00</h2>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="mini-card bg-emerald-500 text-white">
+        <p class="text-xs opacity-80">Income</p>
+        <h3 id="totalIncome" class="text-xl font-semibold">₹0.00</h3>
+      </div>
+      <div class="mini-card bg-rose-500 text-white">
+        <p class="text-xs opacity-80">Expense</p>
+        <h3 id="totalExpense" class="text-xl font-semibold">₹0.00</h3>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transactions -->
+  <section class="px-4">
+    <h2 class="font-semibold mb-2">Recent Transactions</h2>
+    <div id="transactionList" class="space-y-2 pb-28"></div>
+    <p id="emptyState" class="text-center text-slate-400 mt-10 hidden">
+      No transactions yet
+    </p>
+  </section>
+
+  <!-- Floating Button -->
+  <button id="fab" class="fab">+</button>
+
+  <!-- Transaction Modal -->
+  <div id="transactionModal" class="modal hidden">
+    <div class="modal-content">
+
+      <header class="modal-header">
+        <h2>Transaction</h2>
+        <button id="closeModal">✕</button>
+      </header>
+
+      <div class="amount-display">
+        ₹<span id="amountDisplay">0</span>
+      </div>
+
+      <input
+        id="descriptionInput"
+        type="text"
+        placeholder="Description"
+        class="input"
+      />
+
+      <div class="toggle-container">
+        <div id="toggleBg" class="toggle-bg income"></div>
+        <button id="incomeBtn">Income</button>
+        <button id="expenseBtn">Expense</button>
+      </div>
+
+      <div class="numpad">
+        <button class="num">1</button>
+        <button class="num">2</button>
+        <button class="num">3</button>
+        <button class="num">4</button>
+        <button class="num">5</button>
+        <button class="num">6</button>
+        <button class="num">7</button>
+        <button class="num">8</button>
+        <button class="num">9</button>
+        <button class="num">.</button>
+        <button class="num">0</button>
+        <button id="backspace">⌫</button>
+      </div>
+
+      <button id="saveTransaction" class="save-btn">
+        Save Transaction
+      </button>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- JS -->
+<script type="module" src="./script.js"></script>
+
+</body>
+</html>
