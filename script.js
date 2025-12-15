@@ -1,6 +1,6 @@
-// =================================================================
-// FIREBASE SETUP & INITIALIZATION
-// =================================================================
+// ================================================================
+// FIREBASE SETUP
+// ================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
 import {
@@ -27,9 +27,9 @@ import {
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// =================================================================
-// FIREBASE CONFIG
-// =================================================================
+// ================================================================
+// CONFIG
+// ================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAQhPbt_oQj3_zNntl6U6VPnzpCnSygDDg",
   authDomain: "expense-tracker-28379.firebaseapp.com",
@@ -42,33 +42,35 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 getAnalytics(app);
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// =================================================================
+// ================================================================
 // GLOBAL STATE
-// =================================================================
+// ================================================================
 let currentUserId = null;
-let transactions = [];
 let unsubscribeSnapshot = null;
+let transactions = [];
 
 let filterFromDate = null;
 let filterToDate = null;
 
-let isIncome = true;
-let editingId = null;
 let amount = "";
+let isIncome = true;
 
-// =================================================================
-// AUTH UI
-// =================================================================
+// ================================================================
+// AUTH ELEMENTS
+// ================================================================
 const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn");
 const googleLoginBtn = document.getElementById("googleLoginBtn");
 
-// Email login
+// ================================================================
+// AUTH ACTIONS
+// ================================================================
 loginBtn.onclick = async () => {
   try {
     await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
@@ -77,7 +79,6 @@ loginBtn.onclick = async () => {
   }
 };
 
-// Signup
 signupBtn.onclick = async () => {
   try {
     await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
@@ -86,54 +87,32 @@ signupBtn.onclick = async () => {
   }
 };
 
-// =================================================================
+// ================================================================
 // GOOGLE LOGIN
-// =================================================================
+// ================================================================
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
-let googlePopupInProgress = false;
-
 googleLoginBtn.onclick = async () => {
-  if (googlePopupInProgress) return;
-
-  googlePopupInProgress = true;
-  googleLoginBtn.disabled = true;
-
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (e) {
-    alert(e.message || "Google sign-in failed");
-  } finally {
-    googlePopupInProgress = false;
-    googleLoginBtn.disabled = false;
+    alert(e.message || "Google login failed");
   }
 };
 
-// =================================================================
-// LOGOUT
-// =================================================================
-function setupLogout() {
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.onclick = () => signOut(auth);
-  }
-}
-
-// =================================================================
-// AUTH STATE HANDLER
-// =================================================================
+// ================================================================
+// AUTH STATE
+// ================================================================
 onAuthStateChanged(auth, user => {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
 
   if (user) {
     currentUserId = user.uid;
-    setupLogout();
-
     document.getElementById("authSection").classList.add("hidden");
     document.getElementById("appSection").classList.remove("hidden");
-
-    startFirestoreListener();
+    setupLogout();
+    startListener();
   } else {
     currentUserId = null;
     document.getElementById("authSection").classList.remove("hidden");
@@ -141,13 +120,20 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// =================================================================
+function setupLogout() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.onclick = () => signOut(auth);
+  }
+}
+
+// ================================================================
 // FIRESTORE LISTENER
-// =================================================================
-function startFirestoreListener() {
+// ================================================================
+function startListener() {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
 
-  let constraints = [
+  const constraints = [
     where("userId", "==", currentUserId),
     orderBy("date", "desc")
   ];
@@ -159,94 +145,75 @@ function startFirestoreListener() {
 
   unsubscribeSnapshot = onSnapshot(q, snap => {
     transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderSummary();
-    renderList();
+    render();
   });
 }
 
-// =================================================================
-// FILTER MODAL (NO OPTIONAL CHAINING ASSIGNMENT)
-// =================================================================
+// ================================================================
+// FILTER HANDLING
+// ================================================================
 const filterBtn = document.getElementById("filterBtn");
+const filterModal = document.getElementById("filterModal");
+
 if (filterBtn) {
-  filterBtn.onclick = () => {
-    document.getElementById("filterModal").classList.remove("hidden");
-  };
+  filterBtn.onclick = () => filterModal.classList.remove("hidden");
 }
 
-const applyFilterBtn = document.getElementById("applyFilter");
-if (applyFilterBtn) {
-  applyFilterBtn.onclick = () => {
-    const fromVal = document.getElementById("fromDate").value;
-    const toVal = document.getElementById("toDate").value;
+document.getElementById("applyFilter").onclick = () => {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
 
-    filterFromDate = fromVal
-      ? Timestamp.fromDate(new Date(fromVal))
-      : null;
+  filterFromDate = from ? Timestamp.fromDate(new Date(from)) : null;
+  filterToDate = to ? Timestamp.fromDate(new Date(to + "T23:59:59")) : null;
 
-    filterToDate = toVal
-      ? Timestamp.fromDate(new Date(toVal + "T23:59:59"))
-      : null;
+  filterModal.classList.add("hidden");
+  startListener();
+};
 
-    document.getElementById("filterModal").classList.add("hidden");
-    startFirestoreListener();
-  };
-}
+document.getElementById("clearFilter").onclick = () => {
+  filterFromDate = null;
+  filterToDate = null;
+  document.getElementById("fromDate").value = "";
+  document.getElementById("toDate").value = "";
+  filterModal.classList.add("hidden");
+  startListener();
+};
 
-const clearFilterBtn = document.getElementById("clearFilter");
-if (clearFilterBtn) {
-  clearFilterBtn.onclick = () => {
-    filterFromDate = null;
-    filterToDate = null;
-    document.getElementById("fromDate").value = "";
-    document.getElementById("toDate").value = "";
-    document.getElementById("filterModal").classList.add("hidden");
-    startFirestoreListener();
-  };
-}
-
-// =================================================================
+// ================================================================
 // UI ELEMENTS
-// =================================================================
+// ================================================================
 const list = document.getElementById("transactionList");
 const emptyState = document.getElementById("emptyState");
 const amountDisplay = document.getElementById("amountDisplay");
 const descInput = document.getElementById("descriptionInput");
 const toggleBg = document.getElementById("toggleBg");
 
-// =================================================================
-// RENDER SUMMARY
-// =================================================================
-function renderSummary() {
-  let income = 0, expense = 0;
-
-  transactions.forEach(t =>
-    t.type === "income" ? income += t.amount : expense += t.amount
-  );
-
-  document.getElementById("totalIncome").textContent = `₹${income}`;
-  document.getElementById("totalExpense").textContent = `₹${expense}`;
-  document.getElementById("totalBalance").textContent = `₹${income - expense}`;
-}
-
-// =================================================================
-// RENDER LIST
-// =================================================================
-function renderList() {
+// ================================================================
+// RENDER
+// ================================================================
+function render() {
   list.innerHTML = "";
-  emptyState.classList.toggle("hidden", transactions.length !== 0);
+
+  if (transactions.length === 0) {
+    emptyState.classList.remove("hidden");
+    return;
+  }
+
+  emptyState.classList.add("hidden");
+
+  let income = 0;
+  let expense = 0;
 
   transactions.forEach(t => {
-    const row = document.createElement("div");
-    const date = t.date.toDate();
+    t.type === "income" ? income += t.amount : expense += t.amount;
 
-    row.className =
-      "bg-white p-3 rounded-xl shadow flex justify-between items-center";
+    const row = document.createElement("div");
+    row.className = "bg-white p-3 rounded-xl shadow flex justify-between";
 
     row.innerHTML = `
       <div>
         <p class="font-semibold">${t.description}</p>
-        <p class="text-xs text-slate-400">${date.toLocaleString()}</p>
+        <p class="text-xs text-slate-400">${t.date.toDate().toLocaleString()}</p>
       </div>
       <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"} font-semibold">
         ${t.type === "income" ? "+" : "-"}₹${t.amount}
@@ -255,25 +222,26 @@ function renderList() {
 
     list.appendChild(row);
   });
+
+  document.getElementById("totalIncome").textContent = `₹${income}`;
+  document.getElementById("totalExpense").textContent = `₹${expense}`;
+  document.getElementById("totalBalance").textContent = `₹${income - expense}`;
 }
 
-// =================================================================
+// ================================================================
 // MODAL + NUMPAD
-// =================================================================
+// ================================================================
 document.getElementById("fab").onclick = () =>
   document.getElementById("transactionModal").classList.remove("hidden");
 
-document.getElementById("closeModal").onclick = closeModal;
-
-function closeModal() {
+document.getElementById("closeModal").onclick = () => {
   document.getElementById("transactionModal").classList.add("hidden");
   amount = "";
   amountDisplay.textContent = "0";
   descInput.value = "";
-  editingId = null;
   isIncome = true;
   toggleBg.className = "toggle-bg income";
-}
+};
 
 document.querySelectorAll(".num").forEach(btn => {
   btn.onclick = () => {
@@ -299,9 +267,9 @@ document.getElementById("expenseBtn").onclick = () => {
   toggleBg.className = "toggle-bg expense";
 };
 
-// =================================================================
+// ================================================================
 // SAVE TRANSACTION
-// =================================================================
+// ================================================================
 document.getElementById("saveTransaction").onclick = async () => {
   const value = parseFloat(amount);
 
@@ -318,5 +286,5 @@ document.getElementById("saveTransaction").onclick = async () => {
     date: Timestamp.now()
   });
 
-  closeModal();
+  document.getElementById("transactionModal").classList.add("hidden");
 };
