@@ -3,7 +3,7 @@
 <head>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#3b82f6">
-  
+
   <meta charset="UTF-8" />
   <title>Expense Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,182 +13,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="data:,">
 </head>
 
 <body class="bg-slate-100 text-slate-800 font-manrope">
-<!-- ================= AUTH SECTION (LOGIN / SIGNUP) ================= -->
-<div id="authSection" class="min-h-screen flex items-center justify-center bg-slate-100">
+
+<!-- ================= AUTH SECTION ================= -->
+<div id="authSection" class="min-h-screen flex items-center justify-center">
   <div class="bg-white p-6 rounded-xl shadow w-full max-w-sm">
     <h2 class="text-2xl font-bold mb-4 text-center">Expense Tracker Login</h2>
 
-    <input
-      id="emailInput"
-      type="email"
-      placeholder="Email"
-      class="input mb-3"
-    />
+    <input id="emailInput" type="email" placeholder="Email" class="input mb-3" />
+    <input id="passwordInput" type="password" placeholder="Password" class="input mb-4" />
 
-    <input
-      id="passwordInput"
-      type="password"
-      placeholder="Password"
-      class="input mb-4"
-    />
+    <button id="loginBtn" class="save-btn mb-2">Login</button>
 
-    <button id="loginBtn" class="save-btn mb-2">
-      Login
-    </button>
-<button
-  id="googleLoginBtn"
-  class="w-full mt-4 flex items-center justify-center gap-2
-         border border-slate-300 rounded-lg py-2
-         hover:bg-slate-100 transition">
-
-  <img
-    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-    alt="Google"
-    class="w-5 h-5"
-  />
-
-  <span class="font-medium">Sign in with Google</span>
-</button>
-
-    <button id="signupBtn" class="secondary-btn w-full">
-      Create Account
-    </button>
-  </div>
-</div>
-<!-- ================================================================ -->
-<!-- ================= APP SECTION ================= -->
-<div id="appSection" class="hidden">
-
-  <!-- Header -->
-  <header class="flex items-center justify-between px-4 py-4 bg-white shadow-sm">
-    <h1 class="text-xl font-extrabold">Expense Tracker</h1>
-  </header>
-
-  <button
-  id="logoutBtn"
-  class="text-sm text-red-500 hover:text-red-600 font-medium"
->
-  Logout
-</button>
-<button
-  id="filterBtn"
-  class="text-sm text-slate-600 hover:text-indigo-600"
->
-  📅 Filter
-</button>
-
-  <!-- Summary -->
-  <section class="p-4 space-y-4">
-    <div class="summary-card bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-      <p class="text-sm opacity-80">Total Balance</p>
-      <h2 id="totalBalance" class="text-3xl font-bold">₹0.00</h2>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <div class="mini-card bg-emerald-500 text-white">
-        <p class="text-xs opacity-80">Income</p>
-        <h3 id="totalIncome" class="text-xl font-semibold">₹0.00</h3>
-      </div>
-      <div class="mini-card bg-rose-500 text-white">
-        <p class="text-xs opacity-80">Expense</p>
-        <h3 id="totalExpense" class="text-xl font-semibold">₹0.00</h3>
-      </div>
-    </div>
-  </section>
-
-  <!-- Transactions -->
-  <section class="px-4">
-    <h2 class="font-semibold mb-2">Recent Transactions</h2>
-
-    <div id="transactionList" class="space-y-2 pb-28"></div>
-    <p id="emptyState" class="text-center text-slate-400 mt-10 hidden">
-      No transactions yet
-    </p>
-  </section>
-
-  <!-- Floating Action Button -->
-  <button id="fab" class="fab">+</button>
-
-  <!-- Transaction Modal -->
-  <div id="transactionModal" class="modal hidden">
-    <div class="modal-content">
-      <header class="modal-header">
-        <h2 id="modalTitle">Transaction</h2>
-        <button id="closeModal">✕</button>
-      </header>
-
-      <div class="amount-display">
-        ₹<span id="amountDisplay">0</span>
-      </div>
-
-      <input
-        id="descriptionInput"
-        type="text"
-        placeholder="Expense description"
-        class="input"
-      />
-
-      <div id="suggestions" class="flex flex-wrap gap-2 mt-2"></div>
-
-      <div class="toggle-container">
-        <div id="toggleBg" class="toggle-bg income"></div>
-        <button id="incomeBtn">Income</button>
-        <button id="expenseBtn">Expense</button>
-      </div>
-
-      <div class="numpad">
-        <button class="num">1</button><button class="num">2</button><button class="num">3</button>
-        <button class="num">4</button><button class="num">5</button><button class="num">6</button>
-        <button class="num">7</button><button class="num">8</button><button class="num">9</button>
-        <button class="num">.</button><button class="num">0</button><button id="backspace">⌫</button>
-      </div>
-
-      <button id="saveTransaction" class="save-btn">Save Transaction</button>
-    </div>
-  </div>
-
- <script type="module" src="./script.js"></script>
-</div>
-<!-- Date Filter Modal -->
-<div id="filterModal" class="fixed inset-0 bg-black/40 hidden z-50 flex items-end">
-  <div class="bg-white w-full rounded-t-2xl p-4">
-    <h2 class="text-lg font-semibold mb-4">Filter by Date</h2>
-
-    <div class="space-y-3">
-      <div>
-        <label class="text-sm text-slate-600">From</label>
-        <input id="fromDate" type="date" class="w-full border rounded-lg p-2">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-600">To</label>
-        <input id="toDate" type="date" class="w-full border rounded-lg p-2">
-      </div>
-    </div>
-
-    <div class="flex gap-3 mt-6">
-      <button id="clearFilter" class="flex-1 bg-slate-200 rounded-lg py-2">
-        Clear
-      </button>
-      <button id="applyFilter" class="flex-1 bg-indigo-600 text-white rounded-lg py-2">
-        Apply
-      </button>
-    </div>
-  </div>
-</div>
-<!-- ================= END APP SECTION ================= -->
-</body>
-</html>
-
-
-
-
+    <button
+      id="googl
