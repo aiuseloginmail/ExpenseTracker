@@ -22,23 +22,35 @@ body {
   z-index: 60;
 }
 
+/* Modal overlay */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.3);
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;              /* IMPORTANT */
   display: flex;
-  align-items: flex-end;
-  z-index: 50;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Modal content */
 .modal-content {
-  background: #fff;
+  position: relative;
+  z-index: 1000;             /* ABOVE overlay */
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
   width: 100%;
-  height: 95%;
-  border-radius: 1.5rem 1.5rem 0 0;
-  padding: 1rem;
-  animation: slideUp .4s cubic-bezier(.4,0,.2,1);
+  max-width: 420px;
+  pointer-events: auto;      /* IMPORTANT */
 }
+
+/* Ensure button can receive clicks */
+#saveTransaction {
+  pointer-events: auto;
+  z-index: 1001;
+}
+
 
 @keyframes slideUp {
   from { transform: translateY(100%); }
@@ -86,6 +98,7 @@ body {
   width: 50%;
   border-radius: 999px;
   transition: .3s;
+  pointer-events: none;
 }
 
 .toggle-bg.income { background: #10b981; left: 0; }
@@ -114,3 +127,4 @@ body {
   color: white;
   font-weight: 600;
 }
+
