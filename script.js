@@ -115,7 +115,9 @@ googleLoginBtn.onclick = async () => {
 // =================================================================
 function setupLogout() {
   const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
+  if (logoutBtn) {
+    logoutBtn.onclick = () => signOut(auth);
+  }
 }
 
 // =================================================================
@@ -140,7 +142,7 @@ onAuthStateChanged(auth, user => {
 });
 
 // =================================================================
-// FIRESTORE LISTENER (FIXED)
+// FIRESTORE LISTENER
 // =================================================================
 function startFirestoreListener() {
   if (unsubscribeSnapshot) unsubscribeSnapshot();
@@ -163,35 +165,45 @@ function startFirestoreListener() {
 }
 
 // =================================================================
-// FILTER MODAL
+// FILTER MODAL (NO OPTIONAL CHAINING ASSIGNMENT)
 // =================================================================
-document.getElementById("filterBtn")?.onclick = () =>
-  document.getElementById("filterModal").classList.remove("hidden");
+const filterBtn = document.getElementById("filterBtn");
+if (filterBtn) {
+  filterBtn.onclick = () => {
+    document.getElementById("filterModal").classList.remove("hidden");
+  };
+}
 
-document.getElementById("applyFilter")?.onclick = () => {
-  const fromVal = document.getElementById("fromDate").value;
-  const toVal = document.getElementById("toDate").value;
+const applyFilterBtn = document.getElementById("applyFilter");
+if (applyFilterBtn) {
+  applyFilterBtn.onclick = () => {
+    const fromVal = document.getElementById("fromDate").value;
+    const toVal = document.getElementById("toDate").value;
 
-  filterFromDate = fromVal
-    ? Timestamp.fromDate(new Date(fromVal))
-    : null;
+    filterFromDate = fromVal
+      ? Timestamp.fromDate(new Date(fromVal))
+      : null;
 
-  filterToDate = toVal
-    ? Timestamp.fromDate(new Date(toVal + "T23:59:59"))
-    : null;
+    filterToDate = toVal
+      ? Timestamp.fromDate(new Date(toVal + "T23:59:59"))
+      : null;
 
-  document.getElementById("filterModal").classList.add("hidden");
-  startFirestoreListener();
-};
+    document.getElementById("filterModal").classList.add("hidden");
+    startFirestoreListener();
+  };
+}
 
-document.getElementById("clearFilter")?.onclick = () => {
-  filterFromDate = null;
-  filterToDate = null;
-  document.getElementById("fromDate").value = "";
-  document.getElementById("toDate").value = "";
-  document.getElementById("filterModal").classList.add("hidden");
-  startFirestoreListener();
-};
+const clearFilterBtn = document.getElementById("clearFilter");
+if (clearFilterBtn) {
+  clearFilterBtn.onclick = () => {
+    filterFromDate = null;
+    filterToDate = null;
+    document.getElementById("fromDate").value = "";
+    document.getElementById("toDate").value = "";
+    document.getElementById("filterModal").classList.add("hidden");
+    startFirestoreListener();
+  };
+}
 
 // =================================================================
 // UI ELEMENTS
@@ -207,6 +219,7 @@ const toggleBg = document.getElementById("toggleBg");
 // =================================================================
 function renderSummary() {
   let income = 0, expense = 0;
+
   transactions.forEach(t =>
     t.type === "income" ? income += t.amount : expense += t.amount
   );
@@ -227,7 +240,9 @@ function renderList() {
     const row = document.createElement("div");
     const date = t.date.toDate();
 
-    row.className = "bg-white p-3 rounded-xl shadow flex justify-between items-center";
+    row.className =
+      "bg-white p-3 rounded-xl shadow flex justify-between items-center";
+
     row.innerHTML = `
       <div>
         <p class="font-semibold">${t.description}</p>
@@ -237,12 +252,13 @@ function renderList() {
         ${t.type === "income" ? "+" : "-"}₹${t.amount}
       </p>
     `;
+
     list.appendChild(row);
   });
 }
 
 // =================================================================
-// MODAL + NUMPAD (FIXED)
+// MODAL + NUMPAD
 // =================================================================
 document.getElementById("fab").onclick = () =>
   document.getElementById("transactionModal").classList.remove("hidden");
@@ -259,7 +275,6 @@ function closeModal() {
   toggleBg.className = "toggle-bg income";
 }
 
-// Numpad fix
 document.querySelectorAll(".num").forEach(btn => {
   btn.onclick = () => {
     if (btn.textContent === "." && amount.includes(".")) return;
@@ -285,7 +300,7 @@ document.getElementById("expenseBtn").onclick = () => {
 };
 
 // =================================================================
-// SAVE TRANSACTION (FIXED)
+// SAVE TRANSACTION
 // =================================================================
 document.getElementById("saveTransaction").onclick = async () => {
   const value = parseFloat(amount);
@@ -295,14 +310,13 @@ document.getElementById("saveTransaction").onclick = async () => {
     return;
   }
 
-  const data = {
+  await addDoc(collection(db, "expenses"), {
     userId: currentUserId,
     amount: value,
     description: descInput.value.trim(),
     type: isIncome ? "income" : "expense",
     date: Timestamp.now()
-  };
+  });
 
-  await addDoc(collection(db, "expenses"), data);
   closeModal();
 };
