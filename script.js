@@ -238,6 +238,32 @@ function renderSummary() {
   document.getElementById("totalBalance").textContent = formatCurrency(income - expense);
 }
 
+function editTransaction(t) {
+  editingId = t.id;
+  amount = t.amount.toString();
+  amountDisplay.textContent = amount;
+  descInput.value = t.description;
+  isIncome = t.type === "income";
+  toggleBg.className = `toggle-bg ${isIncome ? "income" : "expense"}`;
+  openModal();
+}
+/* Delete Transaction - Firestore */
+async function deleteTransaction(id) {
+  if (!currentUserId) return;
+
+  const confirmDelete = confirm("Delete this transaction?");
+  if (!confirmDelete) return;
+
+  try {
+    await deleteDoc(doc(db, "expenses", id));
+    console.log("Document successfully deleted:", id);
+    // UI auto-updates via Firestore listener
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    alert("Failed to delete transaction");
+  }
+}
+
 function renderList() {
   list.innerHTML = "";
   if (!transactions.length) {
@@ -285,3 +311,4 @@ function renderSuggestions() {
 renderSuggestions();
 
 // (Remaining CRUD, modal, numpad, toggle, save logic
+
