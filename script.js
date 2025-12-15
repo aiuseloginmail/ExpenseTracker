@@ -35,4 +35,233 @@ const firebaseConfig = {
   projectId: "expense-tracker-28379",
   storageBucket: "expense-tracker-28379.firebasestorage.app",
   messagingSenderId: "469399193874",
-  appId: "1:4693
+  appId: "1:469399193874:web:753c79b5d2455d1fd2cbcb",
+  measurementId: "G-M3XP8SJWL5"
+};
+
+const app = initializeApp(firebaseConfig);
+getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// =================================================================
+// GLOBAL STATE
+// =================================================================
+let currentUserId = null;
+let transactions = [];
+let unsubscribeSnapshot = null;
+
+let filterFromDate = null;
+let filterToDate = null;
+
+let isIncome = true;
+let editingId = null;
+let amount = "";
+
+// =================================================================
+// AUTH UI
+// =================================================================
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
+const googleLoginBtn = document.getElementById("googleLoginBtn");
+
+loginBtn.onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+signupBtn.onclick = async () => {
+  try {
+    await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
+
+googleLoginBtn.onclick = async () => {
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+// =================================================================
+// LOGOUT + AUTO LOGOUT
+// =================================================================
+function setupLogout() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
+}
+
+let inactivityTimer;
+const AUTO_LOGOUT_TIME = 10 * 60 * 1000;
+
+function resetInactivityTimer() {
+  if (!currentUserId) return;
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => signOut(auth), AUTO_LOGOUT_TIME);
+}
+
+["click", "mousemove", "keydown", "touchstart"].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer)
+);
+
+// =================================================================
+// AUTH STATE
+// =================================================================
+onAuthStateChanged(auth, user => {
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+  if (user) {
+    currentUserId = user.uid;
+    document.getElementById("authSection").classList.add("hidden");
+    document.getElementById("appSection").classList.remove("hidden");
+    setupLogout();
+    startFirestoreListener();
+  } else {
+    currentUserId = null;
+    document.getElementById("authSection").classList.remove("hidden");
+    document.getElementById("appSection").classList.add("hidden");
+  }
+});
+
+// =================================================================
+// FIRESTORE LISTENER WITH FILTER
+// =================================================================
+function startFirestoreListener() {
+  let constraints = [
+    where("userId", "==", currentUserId),
+    orderBy("date", "desc")
+  ];
+
+  if (filterFromDate) constraints.push(where("date", ">=", filterFromDate));
+  if (filterToDate) constraints.push(where("date", "<=", filterToDate));
+
+  const q = query(collection(db, "expenses"), ...constraints);
+
+  unsubscribeSnapshot = onSnapshot(q, snap => {
+    transactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSummary();
+    renderList();
+  });
+}
+
+// =================================================================
+// UI ELEMENTS
+// =================================================================
+const list = document.getElementById("transactionList");
+const emptyState = document.getElementById("emptyState");
+const amountDisplay = document.getElementById("amountDisplay");
+const descInput = document.getElementById("descriptionInput");
+const toggleBg = document.getElementById("toggleBg");
+
+// =================================================================
+// UTILITIES
+// =================================================================
+function formatCurrency(v) {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(v);
+}
+
+// =================================================================
+// EDIT & DELETE (FIXED)
+// =================================================================
+function editTransaction(t) {
+  editingId = t.id;
+  amount = t.amount.toString();
+  amountDisplay.textContent = amount;
+  descInput.value = t.description;
+  isIncome = t.type === "income";
+  toggleBg.className = `toggle-bg ${isIncome ? "income" : "expense"}`;
+  openModal();
+}
+
+async function deleteTransaction(id) {
+  if (!confirm("Delete this transaction?")) return;
+  await deleteDoc(doc(db, "expenses", id));
+}
+
+// =================================================================
+// RENDER
+// =================================================================
+function renderSummary() {
+  let income = 0, expense = 0;
+  transactions.forEach(t => t.type === "income" ? income += t.amount : expense += t.amount);
+  document.getElementById("totalIncome").textContent = formatCurrency(income);
+  document.getElementById("totalExpense").textContent = formatCurrency(expense);
+  document.getElementById("totalBalance").textContent = formatCurrency(income - expense);
+}
+
+function renderList() {
+  list.innerHTML = "";
+  if (!transactions.length) {
+    emptyState.classList.remove("hidden");
+    return;
+  }
+  emptyState.classList.add("hidden");
+
+  transactions.forEach(t => {
+    const row = document.createElement("div");
+    const date = t.date.toDate();
+
+    row.className = "bg-white p-3 rounded-xl shadow flex justify-between items-center";
+    row.innerHTML = `
+      <div>
+        <p class="font-semibold">${t.description}</p>
+        <p class="text-xs text-slate-400">${date.toLocaleString()}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"} font-semibold">
+          ${t.type === "income" ? "+" : "-"}${formatCurrency(t.amount)}
+        </p>
+        <button class="edit-btn">✏️</button>
+        <button class="delete-btn">🗑️</button>
+      </div>
+    `;
+
+    row.querySelector(".edit-btn").onclick = () => editTransaction(t);
+    row.querySelector(".delete-btn").onclick = () => deleteTransaction(t.id);
+    list.appendChild(row);
+  });
+}
+
+// =================================================================
+// MODAL & SAVE
+// =================================================================
+function openModal() {
+  document.getElementById("transactionModal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("transactionModal").classList.add("hidden");
+  amount = "";
+  editingId = null;
+}
+
+document.getElementById("saveTransaction").onclick = async () => {
+  if (!amount || !descInput.value) return;
+
+  const data = {
+    userId: currentUserId,
+    amount: parseFloat(amount),
+    description: descInput.value,
+    type: isIncome ? "income" : "expense",
+    date: new Date()
+  };
+
+  if (editingId) {
+    await updateDoc(doc(db, "expenses", editingId), data);
+  } else {
+    await addDoc(collection(db, "expenses"), data);
+  }
+
+  closeModal();
+};
