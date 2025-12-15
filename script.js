@@ -215,18 +215,31 @@ expenseBtn.onclick = () => {
 // SAVE TRANSACTION (WORKING)
 // ======================================================
 saveBtn.onclick = async () => {
-  const value = parseFloat(amount);
-  if (isNaN(value) || !descInput.value.trim()) return;
+  const value = parseFloat(amountDisplay.textContent);
 
-  await addDoc(collection(db, "expenses"), {
-    userId: currentUserId,
-    amount: value,
-    description: descInput.value.trim(),
-    type: isIncome ? "income" : "expense",
-    date: Timestamp.now()
-  });
+  if (isNaN(value) || value <= 0) {
+    alert("Please enter a valid amount");
+    return;
+  }
 
-  resetModal();
+  if (!descInput.value.trim()) {
+    alert("Please enter a description");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "expenses"), {
+      userId: currentUserId,
+      amount: value,
+      description: descInput.value.trim(),
+      type: isIncome ? "income" : "expense",
+      date: Timestamp.now()
+    });
+
+    resetModal();
+  } catch (e) {
+    alert("Failed to save expense: " + e.message);
+  }
 };
 
 function resetModal() {
@@ -262,3 +275,4 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
