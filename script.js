@@ -16,6 +16,9 @@ import {
   getFirestore,
   collection,
   addDoc,
+  updateDoc, 
+  deleteDoc,  
+  doc,
   onSnapshot,
   query,
   where,
@@ -327,6 +330,7 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
 
 
 
