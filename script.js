@@ -228,6 +228,20 @@ document.addEventListener("click", e => {
 });
 
 // ======================================================
+// DELETE TRANSACTION
+// ======================================================
+document.addEventListener("click", async e => {
+  if (!e.target.classList.contains("delete-btn")) return;
+
+  const id = e.target.dataset.id;
+
+  if (!confirm("Delete this transaction?")) return;
+
+  await deleteDoc(doc(db, "expenses", id));
+});
+
+
+// ======================================================
 // MODAL + NUMPAD (FIXED)
 // ======================================================
 fab.onclick = () => modal.classList.remove("hidden");
@@ -330,6 +344,7 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
 
 
 
