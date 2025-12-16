@@ -54,6 +54,16 @@ const saveBtn = document.getElementById("saveTransaction");
 
 const amountDisplay = document.getElementById("amountDisplay");
 const descInput = document.getElementById("descriptionInput");
+// ======================================================
+// QUICK CATEGORY SELECTION
+// ======================================================
+document.querySelectorAll(".category-btn").forEach(btn => {
+  btn.onclick = () => {
+    // Remove emoji and use clean text if needed
+    const text = btn.textContent.replace(/^[^\w]+/, "").trim();
+    descInput.value = text;
+  };
+});
 const numButtons = document.querySelectorAll(".num");
 const backspace = document.getElementById("backspace");
 
@@ -275,4 +285,5 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
 
