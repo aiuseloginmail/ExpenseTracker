@@ -93,7 +93,7 @@ let unsubscribe = null;
 let transactions = [];
 
 let amount = "";
-let isIncome = true;
+let isIncome = false;  // Default = Expense
 let filterFrom = null;
 let filterTo = null;
 let editingId = null;
@@ -244,7 +244,14 @@ document.addEventListener("click", async e => {
 // ======================================================
 // MODAL + NUMPAD (FIXED)
 // ======================================================
-fab.onclick = () => modal.classList.remove("hidden");
+fab.onclick = () => {
+  modal.classList.remove("hidden");
+
+  // Default to Expense
+  isIncome = false;
+  toggleBg.className = "toggle-bg expense";
+};
+
 closeModal.onclick = resetModal;
 
 numButtons.forEach(btn => {
@@ -261,8 +268,8 @@ backspace.onclick = () => {
 };
 
 incomeBtn.onclick = () => {
-  isIncome = true;
-  toggleBg.className = "toggle-bg income";
+isIncome = false;
+toggleBg.className = "toggle-bg expense";
 };
 
 expenseBtn.onclick = () => {
@@ -315,7 +322,7 @@ function resetModal() {
   amount = "";
   amountDisplay.textContent = "0";
   descInput.value = "";
-  isIncome = true;
+  isIncome = false; // ⭐ Expense by default
   toggleBg.className = "toggle-bg income";
   editingId = null;
 }
@@ -344,6 +351,7 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
 
 
 
