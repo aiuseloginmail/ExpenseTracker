@@ -93,6 +93,7 @@ let amount = "";
 let isIncome = true;
 let filterFrom = null;
 let filterTo = null;
+let editingId = null;
 
 // ======================================================
 // AUTH
@@ -179,9 +180,15 @@ function render() {
         <p class="font-semibold">${t.description}</p>
         <p class="text-xs text-slate-400">${t.date.toDate().toLocaleString()}</p>
       </div>
-      <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"}">
-        ${t.type === "income" ? "+" : "-"}₹${t.amount}
-      </p>
+    
+      <div class="flex items-center gap-3">
+        <p class="${t.type === "income" ? "text-emerald-500" : "text-rose-500"} font-semibold">
+          ${t.type === "income" ? "+" : "-"}₹${t.amount}
+        </p>
+    
+        <button class="edit-btn" data-id="${t.id}">✏️</button>
+        <button class="delete-btn" data-id="${t.id}">🗑️</button>
+      </div>
     `;
 
     list.appendChild(div);
@@ -191,6 +198,31 @@ function render() {
   totalExpense.textContent = `₹${expense}`;
   totalBalance.textContent = `₹${income - expense}`;
 }
+
+// ======================================================
+// EDIT TRANSACTION
+// ======================================================
+document.addEventListener("click", e => {
+  if (!e.target.classList.contains("edit-btn")) return;
+
+  const id = e.target.dataset.id;
+  const txn = transactions.find(t => t.id === id);
+  if (!txn) return;
+
+   // 4️⃣ Store ID for SAVE logic (THIS IS STEP C ⭐)
+  editingId = id;
+
+  // Open modal
+  modal.classList.remove("hidden");
+
+  // 6️⃣ Fill modal fields with existing data
+  amount = txn.amount.toString();
+  amountDisplay.textContent = amount;
+  descInput.value = txn.description;
+  // 7️⃣ Set income / expense toggle
+  isIncome = txn.type === "income";
+  toggleBg.className = isIncome ? "toggle-bg income" : "toggle-bg expense";
+});
 
 // ======================================================
 // MODAL + NUMPAD (FIXED)
@@ -237,14 +269,23 @@ saveBtn.onclick = async () => {
     return;
   }
 
+  const data = {
+    userId: currentUserId,
+    amount: value,
+    description: descInput.value.trim(),
+    type: isIncome ? "income" : "expense",
+    date: Timestamp.now()
+  };
+
   try {
-    await addDoc(collection(db, "expenses"), {
-      userId: currentUserId,
-      amount: value,
-      description: descInput.value.trim(),
-      type: isIncome ? "income" : "expense",
-      date: Timestamp.now()
-    });
+    if (editingId) {
+      // ✏️ UPDATE existing transaction
+      await updateDoc(doc(db, "expenses", editingId), data);
+      editingId = null;
+    } else {
+      // ➕ CREATE new transaction
+      await addDoc(collection(db, "expenses"), data);
+    }
 
     resetModal();
   } catch (e) {
@@ -259,6 +300,7 @@ function resetModal() {
   descInput.value = "";
   isIncome = true;
   toggleBg.className = "toggle-bg income";
+  editingId = null;
 }
 
 // ======================================================
@@ -285,5 +327,6 @@ clearFilter.onclick = () => {
   filterModal.classList.add("hidden");
   startListener();
 };
+
 
 
