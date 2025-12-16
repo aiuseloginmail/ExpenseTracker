@@ -160,3 +160,11 @@ body {
   background: #e2e8f0;
 }
 
+
+#filterBtn,
+#applyFilter,
+#clearFilter {
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
