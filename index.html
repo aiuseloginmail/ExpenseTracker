@@ -59,6 +59,14 @@
       Login
     </button>
 
+    <button
+    id="filterBtn"
+    class="px-3 py-2 rounded-lg bg-slate-200"
+    >
+      Filter
+    </button>
+
+
     <!-- Google Login (IMPORTANT) -->
     <button
       id="googleLoginBtn"
@@ -189,9 +197,53 @@
 
 </div>
 
+  <!-- FILTER MODAL -->
+<div id="filterModal" class="modal hidden">
+  <div class="modal-content bg-white p-5 rounded-xl w-full max-w-sm">
+
+    <h3 class="text-lg font-semibold mb-4">Filter by Date</h3>
+
+    <div class="mb-3">
+      <label class="block text-sm text-slate-500 mb-1">From</label>
+      <input
+        type="date"
+        id="fromDate"
+        class="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-sm text-slate-500 mb-1">To</label>
+      <input
+        type="date"
+        id="toDate"
+        class="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button
+        id="clearFilter"
+        class="px-4 py-2 rounded-lg bg-slate-200"
+      >
+        Clear
+      </button>
+
+      <button
+        id="applyFilter"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white"
+      >
+        Apply
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <!-- JS -->
 <script type="module" src="./script.js"></script>
 
 </body>
 </html>
+
 
