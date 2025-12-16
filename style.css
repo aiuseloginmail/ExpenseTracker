@@ -128,3 +128,16 @@ body {
   font-weight: 600;
 }
 
+/* Expense category buttons */
+.category-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.category-btn:hover {
+  background: #e2e8f0;
+}
