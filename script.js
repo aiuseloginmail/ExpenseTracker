@@ -328,29 +328,63 @@ function resetModal() {
 }
 
 // ======================================================
-// FILTER (WORKING)
+// FILTER – DOM SAFE BINDING (FINAL FIX)
 // ======================================================
-filterBtn.onclick = () => filterModal.classList.remove("hidden");
+document.addEventListener("DOMContentLoaded", () => {
+  const filterBtn = document.getElementById("filterBtn");
+  const filterModal = document.getElementById("filterModal");
+  const applyFilter = document.getElementById("applyFilter");
+  const clearFilter = document.getElementById("clearFilter");
+  const fromDate = document.getElementById("fromDate");
+  const toDate = document.getElementById("toDate");
 
-applyFilter.onclick = () => {
-  filterFrom = fromDate.value
-    ? Timestamp.fromDate(new Date(fromDate.value))
-    : null;
+  if (!filterBtn || !filterModal) {
+    console.error("Filter elements missing in HTML");
+    return;
+  }
 
-  filterTo = toDate.value
-    ? Timestamp.fromDate(new Date(toDate.value + "T23:59:59"))
-    : null;
+  // Open filter modal
+  filterBtn.addEventListener("click", () => {
+    console.log("Filter button clicked"); // DEBUG
+    filterModal.classList.remove("hidden");
+  });
 
-  filterModal.classList.add("hidden");
-  startListener();
-};
+  // Apply filter
+  applyFilter.addEventListener("click", () => {
+    console.log("Apply filter clicked"); // DEBUG
 
-clearFilter.onclick = () => {
-  filterFrom = null;
-  filterTo = null;
-  filterModal.classList.add("hidden");
-  startListener();
-};
+    filterFrom = fromDate.value
+      ? Timestamp.fromDate(new Date(fromDate.value))
+      : null;
+
+    filterTo = toDate.value
+      ? Timestamp.fromDate(new Date(toDate.value + "T23:59:59"))
+      : null;
+
+    filterModal.classList.add("hidden");
+
+    if (unsubscribe) unsubscribe();
+    startListener();
+  });
+
+  // Clear filter
+  clearFilter.addEventListener("click", () => {
+    console.log("Clear filter clicked"); // DEBUG
+
+    filterFrom = null;
+    filterTo = null;
+
+    fromDate.value = "";
+    toDate.value = "";
+
+    filterModal.classList.add("hidden");
+
+    if (unsubscribe) unsubscribe();
+    startListener();
+  });
+});
+
+
 
 
 
